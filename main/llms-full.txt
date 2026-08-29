@@ -190,6 +190,8 @@ Write-Output 'atuin init powershell | Out-String | Invoke-Expression' >> $PROFIL
 
 Note that the `$PROFILE` path may depend on your PowerShell version.
 
+You may also want to try the `default-powershell` [theme](https://docs.atuin.sh/guide/theming/index.md), which uses the default PowerShell syntax colors.
+
 [**Set up sync** - Move on to the next step.](https://docs.atuin.sh/guide/sync/index.md)
 
 ## Manual installation
@@ -198,7 +200,7 @@ Note that the `$PROFILE` path may depend on your PowerShell version.
 
 If you don't wish to use the installer, the manual installation steps are as follows.
 
-Atuin requires a recent Rust toolchain. The minimum supported version is set by `rust-version` in the workspace [`Cargo.toml`](https://github.com/atuinsh/atuin/blob/main/Cargo.toml) (currently 1.97.0). Distribution package managers often ship an older Rust, so it's best to use [rustup](https://rustup.rs/) to set up an up-to-date toolchain, then you can run:
+Atuin requires a recent Rust toolchain. The minimum supported version is set by `rust-version` in the workspace [`Cargo.toml`](https://github.com/atuinsh/atuin/blob/main/Cargo.toml) (currently 1.98.0). Distribution package managers often ship an older Rust, so it's best to use [rustup](https://rustup.rs/) to set up an up-to-date toolchain, then you can run:
 
 ```
 cargo install atuin --locked
@@ -268,7 +270,7 @@ Atuin is available on WinGet:
 winget install -e Atuinsh.Atuin
 ```
 
-Atuin builds on the latest stable version of Rust, and we make no promises regarding older versions. The minimum supported version is set by `rust-version` in the workspace [`Cargo.toml`](https://github.com/atuinsh/atuin/blob/main/Cargo.toml) (currently 1.97.0). We recommend using [rustup](https://rustup.rs/).
+Atuin builds on the latest stable version of Rust, and we make no promises regarding older versions. The minimum supported version is set by `rust-version` in the workspace [`Cargo.toml`](https://github.com/atuinsh/atuin/blob/main/Cargo.toml) (currently 1.98.0). We recommend using [rustup](https://rustup.rs/).
 
 ```
 git clone https://github.com/atuinsh/atuin.git
@@ -630,13 +632,14 @@ If any of these conditions aren't met, Atuin won't install its hooks, and it won
 
 When Atuin initializes, it sets several environment variables:
 
-| Variable               | Purpose                                                                     |
-| ---------------------- | --------------------------------------------------------------------------- |
-| `ATUIN_SESSION`        | Unique identifier for this shell session                                    |
-| `ATUIN_SHLVL`          | Tracks shell nesting level                                                  |
-| `ATUIN_HISTORY_ID`     | Temporary ID for the currently executing command                            |
-| `ATUIN_HISTORY_AUTHOR` | Optional command author identity (for example `ellie`, `claude`, `copilot`) |
-| `ATUIN_HISTORY_INTENT` | Optional command intent/rationale text                                      |
+| Variable                    | Purpose                                                                                                                                                              |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ATUIN_SESSION`             | Unique identifier for this shell session                                                                                                                             |
+| `ATUIN_SHLVL`               | Tracks shell nesting level                                                                                                                                           |
+| `ATUIN_HISTORY_ID`          | Temporary ID for the currently executing command                                                                                                                     |
+| `ATUIN_HISTORY_AUTHOR`      | Optional command author identity (for example `ellie`, `claude`, `copilot`). A known agent name here marks entries as agent-run, unless it's also the local username |
+| `ATUIN_HISTORY_AUTHOR_KIND` | Optional: `user` or `agent`, overriding the classification inferred from the author name. Only applies when an author is stated                                      |
+| `ATUIN_HISTORY_INTENT`      | Optional command intent/rationale text                                                                                                                               |
 
 Atuin uses these variables internally to track command execution and associate commands with sessions. If `ATUIN_HISTORY_AUTHOR` isn't set, Atuin defaults to the local shell username.
 
@@ -806,14 +809,14 @@ By default, Atuin's interactive search shows only your own commands. Agent-run c
 
 Today this default is built into the search UI rather than configurable via `config.toml`. Interactive search uses the equivalent of:
 
-- `$all-user` — any author that's **not** a known AI agent
+- `$all-user` — any entry that's **not** agent-run
 
 For explicit author filtering, use the CLI `atuin search --author ...` flag. Special values:
 
-| Value        | Meaning                                    |
-| ------------ | ------------------------------------------ |
-| `$all-user`  | Any author that's **not** a known AI agent |
-| `$all-agent` | Any known AI agent author                  |
+| Value        | Meaning                            |
+| ------------ | ---------------------------------- |
+| `$all-user`  | Any entry that's **not** agent-run |
+| `$all-agent` | Any agent-run entry                |
 
 You can also use literal author names:
 
@@ -1312,6 +1315,7 @@ Where `THEMENAME` is a known theme. The following themes are available out-of-th
 - `default` theme
 - `autumn` theme
 - `marine` theme
+- `default-powershell` theme (same as `default`, but with PowerShell default syntax colors)
 - `(none)` theme (removes all styling)
 
 These are present to make sure users and developers can try out theming, but in general, you will need to download themes or make your own.
@@ -1437,16 +1441,6 @@ The path to the Atuin encryption key.
 key_path = "~/.atuin-key"
 ```
 
-### `session_path`
-
-Default: `~/.local/share/atuin/session`
-
-The path to the Atuin server session file. This is essentially just an API token
-
-```
-session_path = "~/.atuin-session"
-```
-
 ### `dialect`
 
 Default: `us`
@@ -1479,7 +1473,7 @@ Default: `true`
 
 Configures whether to automatically check for updates. When enabled, Atuin checks `https://api.atuin.sh` for the latest release at most once per hour, and prints a notice if you're out of date.
 
-Set to `false` to disable. With the update check disabled and sync not set up, Atuin makes no network requests of its own.
+Set to `false` to disable. With the update check turned off and sync not set up, Atuin makes no network requests of its own.
 
 ```
 update_check = true/false
@@ -1497,14 +1491,14 @@ sync_address = "https://api.atuin.sh"
 
 ### `sync_frequency`
 
-Default: `1h`
+Default: `5m`
 
 How often to automatically sync with the server. This can be given in a "human-readable" format. For example, `10s`, `20m`, `1h`, etc.
 
 If set to `0`, Atuin will sync after every command. Some servers may rate limit frequent syncs, but this won't cause any issues.
 
 ```
-sync_frequency = "1h"
+sync_frequency = "5m"
 ```
 
 ### `search_mode`
@@ -1876,12 +1870,12 @@ extra_headers = { "CF-Access-Client-Id" = "...", "CF-Access-Client-Secret" = "..
 
 ### `local_timeout`
 
-Default: `5`
+Default: `2`
 
 Timeout (in seconds) for acquiring a local database connection (SQLite).
 
 ```
-local_timeout = 5
+local_timeout = 2
 ```
 
 ### `command_chaining`
@@ -4196,15 +4190,18 @@ atuin logout
 ```
 # Self Hosting
 
-# Server setup
+# Atuin Server
 
-While we offer a public sync server, and can't view your data (as it's encrypted), you may still wish to self host your own Atuin sync server.
+While we offer a hosted, encrypted and secure server at [Atuin Hub](https://hub.atuin.sh/), you may still wish to host your own Atuin server.
 
-The requirements to do so are pretty minimal! You need to be able to run a binary or docker container, and have a PostgreSQL database set up. Atuin requires PostgreSQL 14 or above.
+## Requirements
 
-Alternatively, the server can use SQLite (version 3 or above) instead of PostgreSQL.
+- You need to be able to run a binary or Docker container on a server.
+- You must have either a PostgreSQL, MySQL or SQLite database.
 
-The server is distributed as a separate binary, `atuin-server`. Prebuilt binaries and an installer are published with every release on the [GitHub releases page](https://github.com/atuinsh/atuin/releases). For example, to install the latest release:
+## Quickstart
+
+The server is distributed as a separate binary, `atuin-server`. Prebuilt binaries and an installer are published with every release on the [GitHub releases page](https://github.com/atuinsh/atuin/releases). You can install the latest version with:
 
 ```
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/atuinsh/atuin/releases/latest/download/atuin-server-installer.sh | sh
@@ -4215,10 +4212,6 @@ Once installed, start the server with:
 ```
 atuin-server start
 ```
-
-Note
-
-Before v18.12.0, the server was bundled into the main `atuin` binary and started with `atuin server start`. If you're upgrading from an older release, you will need to install the new `atuin-server` binary and update any service files (systemd, docker, k8s) to invoke `atuin-server` instead of `atuin server`. See the [release notes](https://github.com/atuinsh/atuin/releases) for details.
 
 ## Configuration
 
@@ -4242,33 +4235,65 @@ ATUIN_OPEN_REGISTRATION=true
 ATUIN_DB_URI="postgres://user:password@hostname/database"
 ```
 
-| Parameter           | Description                                                                 |
-| ------------------- | --------------------------------------------------------------------------- |
-| `host`              | The host to listen on (default: 127.0.0.1)                                  |
-| `port`              | The TCP port to listen on (default: 8888)                                   |
-| `open_registration` | If `true`, accept new user registrations (default: false)                   |
-| `db_uri`            | A valid PostgreSQL or SQLite URI, for saving history (required, no default) |
-| `path`              | A path to prepend to all routes of the server (default: empty)              |
+| Parameter           | Description                                                     |
+| ------------------- | --------------------------------------------------------------- |
+| `db_uri`            | A valid database URI, for saving history (required, no default) |
+| `host`              | The host to listen on (default: 127.0.0.1)                      |
+| `port`              | The TCP port to listen on (default: 8888)                       |
+| `open_registration` | If `true`, accept new user registrations (default: false)       |
+| `path`              | A path to prepend to all routes of the server (default: empty)  |
 
-For SQLite, use the following in your server.toml:
+## Database
+
+You **must** configure the database as Atuin can't proceed without one. You can do so either in `server.toml` or via the environment variable:
+
+Using `server.toml`:
+
+```
+db_uri="postgres://user:password@hostname/database"
+```
+
+Using the `ATUIN_DB_URI` environment variable:
+
+```
+ATUIN_DB_URI="postgres://user:password@hostname/database"
+```
+
+Using `server.toml`:
 
 ```
 db_uri="sqlite:///config/atuin.db"
 ```
 
-Alternatively, provide the Database URI via an environment variable
+Using the `ATUIN_DB_URI` environment variable:
 
 ```
 ATUIN_DB_URI="sqlite:///config/atuin.db"
 ```
 
-These will create the database in the `/config` directory. Be sure to map a persistent volume to the `/config` directory that's writable by the Atuin server.
+**Note that atuin will create this file if it does not exist.**
 
-### TLS
+Using `server.toml`:
 
-For TLS/HTTPS support, we recommend using a reverse proxy such as nginx, Caddy, or Traefik in front of the Atuin server. This is the standard approach for containerized applications and provides better flexibility for certificate management.
+```
+db_uri="mysql://user:password@hostname/database"
+```
 
-> **Note:** The built-in `[tls]` configuration option has been removed. If you were previously using it, please migrate to a reverse proxy setup. Any existing `[tls]` sections in your config will be ignored.
+Using the `ATUIN_DB_URI` environment variable:
+
+```
+ATUIN_DB_URI="mysql://user:password@hostname/database"
+```
+
+Support
+
+MySQL is currently considered a tier-two database meaning that, although we support it, issues are deprioritized in favor of tier-one databases -- PostgreSQL and SQLite.
+
+## TLS
+
+We strongly urge you enable TLS with Atuin. Without TLS, passwords are sent plaintext, which is wildly insecure.
+
+For TLS/HTTPS support, we recommend using a reverse proxy such as [nginx](https://nginx.org/), [Caddy](https://caddyserver.com/), or [Traefik](https://traefik.io/traefik) in front of the Atuin server.
 
 # Using a self hosted server
 
@@ -5644,7 +5669,7 @@ To turn it off, add this to `~/.config/atuin/config.toml`:
 update_check = false
 ```
 
-With the [update check](https://docs.atuin.sh/configuration/config/#update_check) disabled and sync not set up, Atuin makes no network requests of its own.
+With the [update check](https://docs.atuin.sh/configuration/config/#update_check) turned off and sync not set up, Atuin makes no network requests of its own.
 
 If you'd rather the code wasn't in the binary at all, build from source without the default features:
 

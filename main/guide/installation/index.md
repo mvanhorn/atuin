@@ -34,6 +34,8 @@ Write-Output 'atuin init powershell | Out-String | Invoke-Expression' >> $PROFIL
 
 Note that the `$PROFILE` path may depend on your PowerShell version.
 
+You may also want to try the `default-powershell` [theme](https://docs.atuin.sh/guide/theming/index.md), which uses the default PowerShell syntax colors.
+
 [**Set up sync** - Move on to the next step.](https://docs.atuin.sh/guide/sync/index.md)
 
 ## Manual installation
@@ -42,7 +44,7 @@ Note that the `$PROFILE` path may depend on your PowerShell version.
 
 If you don't wish to use the installer, the manual installation steps are as follows.
 
-Atuin requires a recent Rust toolchain. The minimum supported version is set by `rust-version` in the workspace [`Cargo.toml`](https://github.com/atuinsh/atuin/blob/main/Cargo.toml) (currently 1.97.0). Distribution package managers often ship an older Rust, so it's best to use [rustup](https://rustup.rs/) to set up an up-to-date toolchain, then you can run:
+Atuin requires a recent Rust toolchain. The minimum supported version is set by `rust-version` in the workspace [`Cargo.toml`](https://github.com/atuinsh/atuin/blob/main/Cargo.toml) (currently 1.98.0). Distribution package managers often ship an older Rust, so it's best to use [rustup](https://rustup.rs/) to set up an up-to-date toolchain, then you can run:
 
 ```
 cargo install atuin --locked
@@ -112,7 +114,7 @@ Atuin is available on WinGet:
 winget install -e Atuinsh.Atuin
 ```
 
-Atuin builds on the latest stable version of Rust, and we make no promises regarding older versions. The minimum supported version is set by `rust-version` in the workspace [`Cargo.toml`](https://github.com/atuinsh/atuin/blob/main/Cargo.toml) (currently 1.97.0). We recommend using [rustup](https://rustup.rs/).
+Atuin builds on the latest stable version of Rust, and we make no promises regarding older versions. The minimum supported version is set by `rust-version` in the workspace [`Cargo.toml`](https://github.com/atuinsh/atuin/blob/main/Cargo.toml) (currently 1.98.0). We recommend using [rustup](https://rustup.rs/).
 
 ```
 git clone https://github.com/atuinsh/atuin.git
